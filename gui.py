@@ -1,0 +1,264 @@
+from tkinter import *
+from tkinter.ttk import *
+import os
+import sys
+from Setlist import *
+
+
+def getSonglist(songlist):
+    """ Populates argument songlist with songs from directory """
+    # Purges contents of the old listbox
+    songlist.delete(0, END)
+    songs = []
+    for file_name in os.listdir(os.getcwd() + "/song database/"):
+        root, ext = os.path.splitext(file_name)
+        if ext == ".txt":
+            songs.append(root)
+    songs = sorted(songs)
+    for song in songs:
+        songlist.insert(END, " " + song)
+
+def savesong(name, filestring, top, oself):
+    # print(name)
+    # print(filestring)
+    file = open("song database/" + name + ".txt", "w+")
+    file.write(filestring)
+    file.close()
+    top.destroy()
+    getSonglist(oself.songlist)
+
+
+
+
+class Application(Frame):
+
+    def message(self):
+        print("set built!")
+
+    def newSongWindow(self, name="", contents=""):
+        # print("New song!")
+        top = Toplevel()
+        top.title("New song")
+        top.geometry("400x700")
+
+        save_button = Button(top, text="Save", command=lambda: savesong(songname_entry.get(), songtext.get("1.0", END), top, self))
+
+        close_button = Button(top, text="Close", command=top.destroy)
+
+        # Labels
+        label1 = Label(top, text="Name")
+        label2 = Label(top, text="Lyrics")
+
+        # Text scrollbar
+        scrollbar = Scrollbar(top)
+
+        # Text field
+        songtext = Text(top, font=("Segoe UI", 9), yscrollcommand=scrollbar.set)
+        songtext.insert(INSERT, contents)
+        scrollbar.config(command=songtext.yview)
+
+        # Entry
+        # songname = StringVar(top, value=name+"")
+        songname_entry = Entry(top)#, textvariable=songname)
+        songname_entry.insert(END, name)
+
+        for i in range(4):
+            Grid.rowconfigure(top, i, weight=1)
+
+        Grid.rowconfigure(top, 2, weight=5)
+        Grid.columnconfigure(top, 1, weight=1)
+
+        label1.grid(row=0, column=0, sticky=W, pady=5, padx=5)
+        label2.grid(row=1, column=0, sticky=E+W, padx=5)
+
+        songname_entry.grid(row=0, column=1, sticky=W+E, columnspan=2, padx=5)
+
+        songtext.grid(row=2, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
+        save_button.grid(row=3, column=1, pady=5, sticky=E)
+        close_button.grid(row=3, column=2, padx=5, pady=5)
+        scrollbar.grid(row=2, column=3, sticky=N+S+W)
+
+    def viewtonew(self, name, contents, top):
+        top.destroy()
+        self.newSongWindow(name, contents)
+
+    def viewSongWindow(self, name):
+        # print("New song!")
+        top = Toplevel()
+        top.title("View song")
+        top.geometry("400x700")
+        name = name[1:]
+        file = open("song database/" + name + ".txt")
+        contents = file.read()
+
+        close_button = Button(top, text="Close", command=top.destroy)
+        edit_button = Button(top, text="Edit", command=lambda: self.viewtonew(name, contents, top))
+
+        # Labels
+        label1 = Label(top, text=name, font=("Calibri 12 bold"))
+        label2 = Label(top, text="Lyrics")
+
+        # Text scrollbar
+        scrollbar = Scrollbar(top)
+
+        # Text field
+        songtext = Text(top, font=("Segoe UI", 9), yscrollcommand=scrollbar.set)
+        songtext.insert(INSERT, contents)
+        songtext.config(state=DISABLED)
+        scrollbar.config(command=songtext.yview)
+
+        for i in range(4):
+            Grid.rowconfigure(top, i, weight=1)
+
+        Grid.rowconfigure(top, 2, weight=5)
+        Grid.columnconfigure(top, 1, weight=1)
+        label1.grid(row=0, column=0, sticky=W, pady=5, padx=5, columnspan=4)
+        label2.grid(row=1, column=0, sticky=E+W, padx=5)
+        songtext.grid(row=2, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
+        edit_button.grid(row=3, column=1, pady=5, sticky=E)
+        close_button.grid(row=3, column=2, padx=5, pady=5)
+        scrollbar.grid(row=2, column=3, sticky=N+S+W)
+
+    def makeset(self, songs, month, day, leader):
+        name = month[:3] + "-" + day
+        setlist = Setlist(name, leader)
+        realsong=[]
+        for song in songs:
+            realsong.append(song[1:])
+            # print(song)
+        setlist.addsongs(realsong)
+        setlist.createPowerpoint()
+
+
+    def makeWidgets(self, master):
+
+        # shortcut for typing ease
+        master = self.master
+
+        # Title of the window
+        master.title("Powerpoint Generator")
+
+        # Dimensions of the window
+        master.geometry("700x500")
+
+        # Styles
+        # self.style = Style()
+        # self.style.theme_use("default")
+
+        # WIDGETS
+
+        # Add label
+        self.label1 = Label(master, text="Select songs")
+        self.label2 = Label(master, text="Set Info")
+        self.label3 = Label(master, text="Leader:")
+        self.label4 = Label(master, text="Date")
+        self.label5 = Label(master, text="Setlist")
+
+        # Scrollbar for listbox
+        self.song_scrollbar = Scrollbar()
+
+        # Add listbox
+        self.songlist = Listbox(master, yscrollcommand=self.song_scrollbar.set)
+
+        # Populate songs into listbox
+        getSonglist(self.songlist)
+
+        # activate scrollbar
+        self.song_scrollbar.config(command=self.songlist.yview)
+
+
+        # songs = self.setlist.get(0, self.setlist.size()-1)
+        # month = self.month.get()
+        # day = self.day.get()
+        # leader = self.leader.get()
+        
+        # Add buttons
+        self.newsong_button = Button(master, text="New song", command=lambda:self.newSongWindow())
+
+        self.build_button = Button(master, text="Build", command=lambda: 
+                            self.makeset(self.setlist.get(0, self.setlist.size()-1), self.month.get(), 
+                            self.day.get(), self.leader.get()))
+
+        self.remove_button = Button(master, text="Remove", command=
+                             lambda:self.setlist.delete(self.setlist.curselection()))
+
+        self.view_button = Button(master, text="View", command=
+                                  lambda:self.viewSongWindow(self.songlist.
+                                  get(self.songlist.curselection())))
+
+        # Add space for set
+        self.setscroll = Scrollbar()
+        self.setlist = Listbox(master, yscrollcommand=self.setscroll.set)
+        self.setscroll.config(command=self.setlist.yview)
+
+        # Entries
+
+        # Set leader
+        self.leader = StringVar()
+        self.leader_entry = Entry(master, textvariable=self.leader)
+        self.year = StringVar()
+        self.year_entry = Entry(master, textvariable=self.year)
+
+        # Option menus
+        self.month = StringVar()
+
+        months = ["January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November",
+                  "December"]
+        self.month_menu = OptionMenu(master, self.month, months[0], *months)
+
+        self.day = StringVar()
+        days = range(1, 32, 1)
+        self.days_menu = OptionMenu(master, self.day, days[0], *days)
+
+        # Grid it!
+
+        for j in range(7):
+            Grid.columnconfigure(master, j, weight=1)
+        # Grid.columnconfigure(master, 2, weight=1)
+
+        for i in range(6):
+            Grid.rowconfigure(master, i, weight=1)
+
+        self.label1.grid(row=0, column=0, padx=5, pady=5, sticky=W)
+
+        self.songlist.grid(row=1, column=0, padx=5, sticky=N+E+S+W, columnspan=2, rowspan=5, ipady=100)
+        self.song_scrollbar.grid(row=1, column=2, sticky=N+S+W, rowspan=5)
+
+        self.newsong_button.grid(row=6, column=0, padx=5, pady=5, sticky=W+S+E)
+        self.view_button.grid(row=6, column=1, padx=5, pady=5, sticky=W+S+E)
+        self.remove_button.grid(row=6, column=4, sticky=S+W+E, padx=5, pady=5)
+        self.build_button.grid(row=6, column=5, sticky=S+W+E, padx=5, pady=5)
+
+        self.label2.grid(row=0, column=3, sticky=E, padx=10)
+        self.label3.grid(row=1, column=3, sticky=E, padx=10)
+        self.label4.grid(row=2, column=3, sticky=N+S+E, padx=10)
+        self.label5.grid(row=3, column=3, sticky=N+E, padx=10)
+
+        self.leader_entry.grid(row=1, column=4, columnspan=2, sticky=E+W)
+        self.month_menu.grid(row=2, column=4, sticky=W+E)
+        self.days_menu.grid(row=2, column=5, sticky=W)
+        self.setlist.grid(row=3, column=4, rowspan=3, columnspan=2, sticky=N+E+S+W)
+        self.setscroll.grid(row=3, column=6, rowspan=3, sticky=W+N+S)
+
+        # Event listeners!
+        # self.songlist.bind("<Button-1>", lambda event: self.setlist.insert(END, self.songlist.get(ACTIVE)))
+
+        self.songlist.bind("<Double-Button-1>", lambda event: self.setlist.insert(END, self.songlist.get(self.songlist.curselection())))
+        # self.setlist.bind("<ButtonRelease-1>", lambda event: print(self.setlist.get(self.setlist.curselection())))
+
+
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.makeWidgets(master)
+
+
+def main():
+    root = Tk()
+    app = Application(root)
+    app.mainloop()
+    # root.destroy()
+
+
+if __name__ == '__main__':
+    main()

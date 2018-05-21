@@ -1,0 +1,2 @@
+from Setlist import *
+deleteAllPowerpoints()
