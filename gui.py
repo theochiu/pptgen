@@ -18,6 +18,7 @@ def getSonglist(songlist):
     for song in songs:
         songlist.insert(END, " " + song)
 
+
 def savesong(name, filestring, top, oself):
     # print(name)
     # print(filestring)
@@ -26,8 +27,6 @@ def savesong(name, filestring, top, oself):
     file.close()
     top.destroy()
     getSonglist(oself.songlist)
-
-
 
 
 class Application(Frame):
@@ -53,13 +52,14 @@ class Application(Frame):
         scrollbar = Scrollbar(top)
 
         # Text field
-        songtext = Text(top, font=("Segoe UI", 9), yscrollcommand=scrollbar.set)
+        songtext = Text(top, font=("Segoe UI", 9),
+                        yscrollcommand=scrollbar.set)
         songtext.insert(INSERT, contents)
         scrollbar.config(command=songtext.yview)
 
         # Entry
         # songname = StringVar(top, value=name+"")
-        songname_entry = Entry(top)#, textvariable=songname)
+        songname_entry = Entry(top)
         songname_entry.insert(END, name)
 
         for i in range(4):
