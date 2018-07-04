@@ -72,4 +72,12 @@ class Setlist(object):
             os.remove(path + song.songname + ".ppt")
 
         temp.close()
-        os.rename("temp.txt", self.setName + " (Worship Slides)" + ".ppt")
+
+        num = 1
+        name = self.setName + " (Worship Slides)" + ".ppt"
+        while name in os.listdir():
+            name = self.setName + " (Worship Slides " + str(num) + ")" + ".ppt"
+            if name in os.listdir():
+                num += 1
+
+        os.rename("temp.txt", name)
