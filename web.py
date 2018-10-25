@@ -78,7 +78,7 @@ app.layout = html.Div([
 	html.Div([
 		html.H1("Setlist"),
 		html.P("set table here"),
-		html.Div(dcc.Textarea(value="", style={"width" : "85%", "height" : "250px"}, id="textarea", readOnly=True)),
+		html.Div(id="set_table"),
 
 		html.Button("Build", id="build_button"),
 
@@ -92,23 +92,44 @@ app.layout = html.Div([
 # EVENT LISTENERS
 
 setlist = []
-@app.callback(Output("textarea", "value"),
-	[Input("add_button", "n_clicks")],
-	[State("song_options", "value"),
-	State("textarea", "value")
-	],
-)
+# @app.callback(Output("textarea", "value"),
+# 	[Input("add_button", "n_clicks")],
+# 	[State("song_options", "value"),
+# 	State("textarea", "value")
+# 	],
+# )
 
-def update_setlist(n_clicks, song_input, oldsong):
+# def update_setlist(n_clicks, song_input, oldsong):
+# 	print("callback")
+# 	print(song_input)
+# 	if n_clicks > 0 and song_input in SONGLIST :
+# 		setlist.append(str(song_input))
+# 		text_out = ""
+# 		for song in setlist:
+# 			text_out += song + "\n"
+# 		return text_out
+# 	return ""
+
+@app.callback(Output("set_table", "children"),
+	[Input("add_button", "n_clicks")],
+	[State("song_options", "value")]
+)
+def generatetable(n_clicks, song_input):
+
 	print("callback")
 	print(song_input)
 	if n_clicks > 0 and song_input in SONGLIST :
 		setlist.append(str(song_input))
-		text_out = ""
-		for song in setlist:
-			text_out += song + "\n"
-		return text_out
-	return ""
+		
+
+
+	return html.Table(
+		# Header
+		[html.Tr(html.Th("Setlist"), style={"text-align" : "left"})] +
+
+		# Body
+		[html.Tr([html.Td(song)]) for song in setlist ]
+	)
 
 
 
