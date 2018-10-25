@@ -6,21 +6,14 @@ import os
 import plotly.plotly as py
 import plotly.figure_factory as ff
 
+from dash.dependencies import *
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 SONGLIST = []
 
-
-
-data_matrix = [['Country', 'Year', 'Population'],
-			   ['United States', 2000, 282200000],
-			   ['Canada', 2000, 27790000],
-			   ['United States', 2005, 295500000],
-			   ['Canada', 2005, 32310000],
-			   ['United States', 2010, 309000000],
-			   ['Canada', 2010, 34000000]]
 
 
 def getSonglist(songlist):
@@ -62,20 +55,21 @@ app.layout = html.Div([
 		html.H2(children="Choose songs"),
 
 
-		dcc.Dropdown(options=options),
+		dcc.Dropdown(options=options, id="song_options"),
 
 		html.P(),
 		html.P(),
 
 		html.Div([
-			html.Button("Add", id="submit_button"),
+			html.Button("Add", id="add_button", n_clicks=0),
 			html.Button("Edit", id="edit_button")
 
 		], style={"columnCount" : "2"}),
 
 	], style= {'width': '44%', 
 			'display': 'inline-block',
-			'margin-right' : '100px'
+			'margin-right' : '100px',
+			'margin-left' : '25px'
 
 	}),
 
@@ -84,14 +78,39 @@ app.layout = html.Div([
 	html.Div([
 		html.H1("Setlist"),
 		html.P("set table here"),
-		html.Button("Build", id="build_button")
+		html.Div(dcc.Textarea(value="", style={"width" : "85%", "height" : "250px"}, id="textarea", readOnly=True)),
 
+		html.Button("Build", id="build_button"),
 
 
 
 	], style= {'width': '44%', 'display': 'inline-block', "position" : "absolute"})
 
 ], style={"columnCount": "1"})
+
+
+# EVENT LISTENERS
+
+setlist = []
+@app.callback(Output("textarea", "value"),
+	[Input("add_button", "n_clicks")],
+	[State("song_options", "value"),
+	State("textarea", "value")
+	],
+)
+
+def update_setlist(n_clicks, song_input, oldsong):
+	print("callback")
+	print(song_input)
+	if n_clicks > 0 and song_input in SONGLIST :
+		setlist.append(str(song_input))
+		text_out = ""
+		for song in setlist:
+			text_out += song + "\n"
+		return text_out
+	return ""
+
+
 
 if __name__ == '__main__':
 	app.run_server(debug=True, port=3000)
