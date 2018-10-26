@@ -7,10 +7,19 @@ import plotly.plotly as py
 import plotly.figure_factory as ff
 
 from dash.dependencies import *
+# import dash_table_experiments as dt
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['https://getbootstrap.com/docs/4.1/dist/css/bootstrap.min.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__)
+
+external_css = ["https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+                "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css", 
+                external_stylesheets,
+                ]
+
+for css in external_css:
+    app.css.append_css({"external_url": css})
 
 SONGLIST = []
 
@@ -45,10 +54,10 @@ app.layout = html.Div([
 
 		html.H1("Powerpoint generator"),
 
-		html.P(html.Label("Set title")),
+		html.H3(html.Label("Set title")),
 		html.P(dcc.Input(type="text")),
 
-		html.P(html.Label("Set leader")),
+		html.H3(html.Label("Set leader")),
 		html.P(dcc.Input(placeholder="Theodore",type="text")),
 
 
@@ -79,6 +88,16 @@ app.layout = html.Div([
 		html.H1("Setlist"),
 		html.P("set table here"),
 		html.Div(id="set_table"),
+
+		# html.H1("datatable test"),
+		# dt.DataTable(
+		# 	id="datatable",
+		# 	rows=[1,2,3],
+		# 	editable=False,
+		# 	row_selectable=True,
+		# 	filterable=True,
+		# 	selected_row_indices=[]
+		# ),
 
 		html.Button("Build", id="build_button"),
 
@@ -128,7 +147,7 @@ def generatetable(n_clicks, song_input):
 		[html.Tr(html.Th("Setlist"), style={"text-align" : "left"})] +
 
 		# Body
-		[html.Tr([html.Td(song)]) for song in setlist ]
+		[html.Tr([html.Td(song)]) for song in setlist ],
 	)
 
 
