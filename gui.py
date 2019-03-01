@@ -5,7 +5,19 @@ import os
 import sys
 import platform
 from Setlist import *
+from string import capwords
 
+from sqlalchemy import *
+from sqlalchemy.ext.declarative import *
+from sqlalchemy.orm import *
+from database import *
+
+# Open the database
+engine = create_engine('sqlite:///songs.db', echo=True)
+ 
+# create a Session
+Session = sessionmaker(bind=engine)
+session = Session()
 
 def getSonglist(songlist):
 	""" Populates argument songlist with songs from directory """
@@ -13,12 +25,28 @@ def getSonglist(songlist):
 	songlist.delete(0, END)
 	songs = []
 	for file_name in os.listdir(os.getcwd() + "/song database/"):
-		root, ext = os.path.splitext(file_name)
-		if ext == ".txt":
-			songs.append(root)
-	songs = sorted(songs)
-	for song in songs:
-		songlist.insert(END, " " + song)
+		if session.query(Song).filter_by(filename=file_name).first() == None:
+			# doesn't exist
+			messagebox.showinfo("Oops", "We found a song that's not in the folder but not the database, adding "+
+								file_name)
+			root, ext = os.path.splitext(file_name)
+			new_song = Song(capwords(root), "unlisted", file_name)
+
+	queries = []
+	for row in session.query(Song):
+		queries.append(capwords(getattr(row, attr)))
+
+	for query in queries:
+		alist.insert(END, " " + query)
+
+
+
+	# 	root, ext = os.path.splitext(file_name)
+	# 	if ext == ".txt":
+	# 		songs.append(root)
+	# songs = sorted(songs)
+	# for song in songs:
+	# 	songlist.insert(END, " " + song)
 
 
 def savesong(name, filestring, top, oself):
@@ -176,10 +204,23 @@ class Application(Frame):
 		self.song_scrollbar = Scrollbar()
 
 		# Add listbox
-		self.songlist = Listbox(master, yscrollcommand=self.song_scrollbar.set)
+		# self.songlist = Listbox(master, yscrollcommand=self.song_scrollbar.set)
+
+		# SONGLIST IS NOW TREEVIEW!!!
+		self.songlist = Treeview(master, yscrollcommand=self.song_scrollbar.set)
+		self.songlist["columns"] = ("artist")
+
+		self.songlist.column("#0", width=50)
+		self.songlist.column("artist", width=25)
+
+		self.songlist.heading("#0", text="name")
+		self.songlist.heading("artist", text="artist")
+
+		for row in session.query(Song):
+			self.songlist.insert("", END, text=capwords(row.name), values=(capwords(row.artist), " "))
 
 		# Populate songs into listbox
-		getSonglist(self.songlist)
+		# getSonglist(self.songlist)
 
 		# activate scrollbar
 		self.song_scrollbar.config(command=self.songlist.yview)
