@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import messagebox
+
 import os
 import sys
 import platform
@@ -12,6 +13,9 @@ from sqlalchemy.ext.declarative import *
 from sqlalchemy.orm import *
 from database import *
 
+from tkinter import Text as Text
+
+
 # Open the database
 engine = create_engine('sqlite:///songs.db', echo=True)
  
@@ -21,23 +25,23 @@ session = Session()
 
 def getSonglist(songlist):
 	""" Populates argument songlist with songs from directory """
-	# Purges contents of the old listbox
-	songlist.delete(0, END)
-	songs = []
-	for file_name in os.listdir(os.getcwd() + "/song database/"):
-		if session.query(Song).filter_by(filename=file_name).first() == None:
-			# doesn't exist
-			messagebox.showinfo("Oops", "We found a song that's not in the folder but not the database, adding "+
-								file_name)
-			root, ext = os.path.splitext(file_name)
-			new_song = Song(capwords(root), "unlisted", file_name)
+	# Purges contents of the old treelist
 
-	queries = []
+	songlist.delete(*songlist.get_children())
+
+	tag = "odd"
+	song = []
 	for row in session.query(Song):
-		queries.append(capwords(getattr(row, attr)))
+		song.append(row.name)
 
-	for query in queries:
-		alist.insert(END, " " + query)
+	for song in sorted(song, key=str.lower):
+		songlist.insert("", END, text=capwords(capwords(song)), tags=tag, 
+			values=(capwords(session.query(Song).filter_by(name=song).first().artist), " "))
+
+		if tag == "odd":
+			tag = "even"
+		else:
+			tag = "odd"
 
 
 
@@ -49,14 +53,33 @@ def getSonglist(songlist):
 	# 	songlist.insert(END, " " + song)
 
 
-def savesong(name, filestring, top, oself):
+def savesong(name, filestring, top, oself, artist):
 	# print(name)
 	# print(filestring)
 	file = open("song database/" + name + ".txt", "w+")
 	file.write(filestring)
 	file.close()
 	top.destroy()
+
+	# add to db
+	song = Song(name.lower(), artist.lower(), name + ".txt")
+	session.add(song)
+	session.commit()
+
 	getSonglist(oself.songlist)
+
+
+def delete_song(top, name, filename):
+	# print("name=" +name)
+	song = session.query(Song).filter_by(name=name.lower()).first()
+	# print(type(song))
+	session.delete(song)
+	session.commit()
+	top.destroy()
+	os.remove("song database/" + filename)
+
+	messagebox.showinfo("Success", name + " was deleted")
+
 
 
 class Application(Frame):
@@ -70,13 +93,15 @@ class Application(Frame):
 		top.title("New song")
 		top.geometry("400x700")
 
-		save_button = Button(top, text="Save", command=lambda: savesong(songname_entry.get(), songtext.get("1.0", END), top, self))
+		save_button = Button(top, text="Save", command=lambda: 
+			savesong(songname_entry.get(), songtext.get("1.0", END), top, self, artist_entry.get()))
 
 		close_button = Button(top, text="Close", command=top.destroy)
 
 		# Labels
 		label1 = Label(top, text="Name")
-		label2 = Label(top, text="Lyrics")
+		label2 = Label(top, text="Artist")
+		label3 = Label(top, text="Lyrics")
 
 		# Text scrollbar
 		scrollbar = Scrollbar(top)
@@ -89,11 +114,18 @@ class Application(Frame):
 		else :
 			songtext = Text(top, font=("Segoe UI", 9), yscrollcommand=scrollbar.set)
 
+
 		songtext.insert(INSERT, contents)
 		scrollbar.config(command=songtext.yview)
 
 		# Entry
 		# songname = StringVar(top, value=name+"")
+		artist_entry = Entry(top)
+		if name == "":
+			artist_entry.insert(END, name)
+		else :
+			artist_entry.insert(END, capwords(session.query(Song).filter_by(name=name.lower()).first().artist))
+
 		songname_entry = Entry(top)
 		songname_entry.insert(END, name)
 
@@ -104,33 +136,40 @@ class Application(Frame):
 		Grid.columnconfigure(top, 1, weight=1)
 
 		label1.grid(row=0, column=0, sticky=W, pady=5, padx=5)
-		label2.grid(row=1, column=0, sticky=E+W, padx=5)
+		label2.grid(row=1, column=0, sticky=W, padx=5)
+		label3.grid(row=2, column=0, stick=E+W+S, padx=5)
 
 		songname_entry.grid(row=0, column=1, sticky=W+E, columnspan=2, padx=5)
+		artist_entry.grid(row=1, column=1, sticky=W+E, columnspan=2, padx=5)
 
-		songtext.grid(row=2, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
-		save_button.grid(row=3, column=1, pady=5, sticky=E)
-		close_button.grid(row=3, column=2, padx=5, pady=5)
-		scrollbar.grid(row=2, column=3, sticky=N+S+W)
+		songtext.grid(row=3, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
+		save_button.grid(row=4, column=1, pady=5, sticky=E)
+		close_button.grid(row=4, column=2, padx=5, pady=5)
+		scrollbar.grid(row=3, column=3, sticky=N+S+W)
 
 	def viewtonew(self, name, contents, top):
 		top.destroy()
 		self.newSongWindow(name, contents)
 
+
 	def viewSongWindow(self, name):
 		# print("New song!")
+
 		top = Toplevel()
 		top.title("View song")
 		top.geometry("400x700")
-		file = open("song database/" + name + ".txt")
+		filename = session.query(Song).filter_by(name=name.lower()).first().filename
+		file = open("song database/" + filename)
 		contents = file.read()
 
 		close_button = Button(top, text="Close", command=top.destroy)
 		edit_button = Button(top, text="Edit", command=lambda: self.viewtonew(name, contents, top))
+		delete_button = Button(top, text="Delete", command=lambda: delete_song(top, name, filename))
 
 		# Labels
 		label1 = Label(top, text=name, font=("Calibri 12 bold"))
-		label2 = Label(top, text="Lyrics")
+		label2 = Label(top, text="by "+capwords(session.query(Song).filter_by(name=name.lower()).first().artist))
+		label3 = Label(top, text="Lyrics")
 
 		# Text scrollbar
 		scrollbar = Scrollbar(top)
@@ -139,7 +178,7 @@ class Application(Frame):
 
 		# fonts gotta be different for mac
 		if (platform.system() == "Darwin"):
-			songtext = Text(top)#, font=("Segoe UI", 14), yscrollcommand=scrollbar.set)
+			songtext = Text(top, font=("Segoe UI", 14), yscrollcommand=scrollbar.set)
 			print("Darwin!")
 
 		else :
@@ -156,10 +195,15 @@ class Application(Frame):
 		Grid.columnconfigure(top, 1, weight=1)
 		label1.grid(row=0, column=0, sticky=W, pady=5, padx=5, columnspan=4)
 		label2.grid(row=1, column=0, sticky=E+W, padx=5)
-		songtext.grid(row=2, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
-		edit_button.grid(row=3, column=1, pady=5, sticky=E)
-		close_button.grid(row=3, column=2, padx=5, pady=5)
-		scrollbar.grid(row=2, column=3, sticky=N+S+W)
+
+		label3.grid(row=2, column=0, sticky=W)
+
+
+		songtext.grid(row=3, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
+		delete_button.grid(row=4, column=0, sticky=E)
+		edit_button.grid(row=4, column=1, pady=5, sticky=E)
+		close_button.grid(row=4, column=2, padx=5, pady=5)
+		scrollbar.grid(row=3, column=3, sticky=N+S+W)
 
 	def makeset(self, songs, month, day, leader, setname):
 		setlist = Setlist(setname, leader, month, day)
@@ -211,13 +255,9 @@ class Application(Frame):
 		self.songlist.heading("#0", text="name")
 		self.songlist.heading("artist", text="artist")
 
-		tag = "odd"
-		for row in session.query(Song):
-			self.songlist.insert("", END, text=capwords(row.name), tags=tag, values=(capwords(row.artist), " "))
-			if tag == "odd":
-				tag = "even"
-			else:
-				tag = "odd"
+		getSonglist(self.songlist)
+		
+		
 		
 		# self.songlist.tag_configure("odd", background='orange')
 		self.songlist.tag_configure("even", background="#E8E8E8")

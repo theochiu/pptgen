@@ -48,6 +48,8 @@ def populate_from_folder():
 	s.commit()
 
 if __name__ == '__main__':
-	print(s.query(Song).filter_by(filename="chroniclesofridiculous").first())
+	song = s.query(Song).filter_by(artist="1").first()
+	# s.delete(song)
+	# s.commit()
 
 
