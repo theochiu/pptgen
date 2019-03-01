@@ -99,7 +99,13 @@ app.layout = html.Div([
 		# 	selected_row_indices=[]
 		# ),
 
-		html.Button("Build", id="build_button"),
+		html.P(),
+		html.P(),
+
+		html.Div([
+			html.Button("Remove", id="remove_button"),
+			html.Button("Build", id="build_button", n_clicks=0),
+		]),
 
 
 
@@ -133,14 +139,12 @@ setlist = []
 	[Input("add_button", "n_clicks")],
 	[State("song_options", "value")]
 )
-def generatetable(n_clicks, song_input):
+def generate_table(n_clicks, song_input):
 
-	print("callback")
+	print("generate_table")
 	print(song_input)
 	if n_clicks > 0 and song_input in SONGLIST :
 		setlist.append(str(song_input))
-		
-
 
 	return html.Table(
 		# Header
@@ -148,6 +152,8 @@ def generatetable(n_clicks, song_input):
 
 		# Body
 		[html.Tr([html.Td(song)]) for song in setlist ],
+
+	
 	)
 
 
