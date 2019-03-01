@@ -122,7 +122,6 @@ class Application(Frame):
 		top = Toplevel()
 		top.title("View song")
 		top.geometry("400x700")
-		name = name[1:]
 		file = open("song database/" + name + ".txt")
 		contents = file.read()
 
@@ -140,7 +139,7 @@ class Application(Frame):
 
 		# fonts gotta be different for mac
 		if (platform.system() == "Darwin"):
-			songtext = Text(top, font=("Segoe UI", 14), yscrollcommand=scrollbar.set)
+			songtext = Text(top)#, font=("Segoe UI", 14), yscrollcommand=scrollbar.set)
 			print("Darwin!")
 
 		else :
@@ -164,11 +163,7 @@ class Application(Frame):
 
 	def makeset(self, songs, month, day, leader, setname):
 		setlist = Setlist(setname, leader, month, day)
-		realsong=[]
-		for song in songs:
-			realsong.append(song[1:])
-			# print(song)
-		setlist.addsongs(realsong)
+		setlist.addsongs(songs)
 		setlist.createPowerpoint()
 		# success box
 		messagebox.showinfo("Success", "Build completed, powerpoint file created")
@@ -184,7 +179,7 @@ class Application(Frame):
 		master.title("Powerpoint Generator")
 
 		# Dimensions of the window
-		master.geometry("700x500")
+		master.geometry("900x500")
 
 		# Styles
 		# self.style = Style()
@@ -216,9 +211,16 @@ class Application(Frame):
 		self.songlist.heading("#0", text="name")
 		self.songlist.heading("artist", text="artist")
 
+		tag = "odd"
 		for row in session.query(Song):
-			self.songlist.insert("", END, text=capwords(row.name), values=(capwords(row.artist), " "))
-
+			self.songlist.insert("", END, text=capwords(row.name), tags=tag, values=(capwords(row.artist), " "))
+			if tag == "odd":
+				tag = "even"
+			else:
+				tag = "odd"
+		
+		# self.songlist.tag_configure("odd", background='orange')
+		self.songlist.tag_configure("even", background="#E8E8E8")
 		# Populate songs into listbox
 		# getSonglist(self.songlist)
 
@@ -243,7 +245,7 @@ class Application(Frame):
 
 		self.view_button = Button(master, text="View", command=
 								  lambda:self.viewSongWindow(self.songlist.
-								  get(self.songlist.curselection())))
+								  	item(self.songlist.selection(), "text")))
 
 		# Add space for set
 		self.setscroll = Scrollbar()
@@ -287,7 +289,7 @@ class Application(Frame):
 
 		self.label1.grid(row=0, column=0, padx=5, pady=5, sticky=W)
 
-		self.songlist.grid(row=1, column=0, padx=5, sticky=N+E+S+W, columnspan=2, rowspan=5, ipady=100)
+		self.songlist.grid(row=1, column=0, padx=5, sticky=N+E+S+W, columnspan=3, rowspan=5, ipady=100, ipadx=100)
 		self.song_scrollbar.grid(row=1, column=2, sticky=N+S+W, rowspan=5)
 
 		self.newsong_button.grid(row=7, column=0, padx=5, pady=5, sticky=W+S+E)
@@ -313,7 +315,7 @@ class Application(Frame):
 		# Event listeners!
 		# self.songlist.bind("<Button-1>", lambda event: self.setlist.insert(END, self.songlist.get(ACTIVE)))
 
-		self.songlist.bind("<Double-Button-1>", lambda event: self.setlist.insert(END, self.songlist.get(self.songlist.curselection())))
+		self.songlist.bind("<Double-Button-1>", lambda event: self.setlist.insert(END, self.songlist.item(self.songlist.selection(), "text")))
 		# self.setlist.bind("<ButtonRelease-1>", lambda event: print(self.setlist.get(self.setlist.curselection())))
 
 
