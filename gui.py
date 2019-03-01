@@ -132,12 +132,12 @@ class Application(Frame):
 		for i in range(4):
 			Grid.rowconfigure(top, i, weight=1)
 
-		Grid.rowconfigure(top, 2, weight=5)
+		Grid.rowconfigure(top, 3, weight=5)
 		Grid.columnconfigure(top, 1, weight=1)
 
 		label1.grid(row=0, column=0, sticky=W, pady=5, padx=5)
 		label2.grid(row=1, column=0, sticky=W, padx=5)
-		label3.grid(row=2, column=0, stick=E+W+S, padx=5)
+		label3.grid(row=2, column=0, stick=E+W+S)
 
 		songname_entry.grid(row=0, column=1, sticky=W+E, columnspan=2, padx=5)
 		artist_entry.grid(row=1, column=1, sticky=W+E, columnspan=2, padx=5)
@@ -191,15 +191,15 @@ class Application(Frame):
 		for i in range(4):
 			Grid.rowconfigure(top, i, weight=1)
 
-		Grid.rowconfigure(top, 2, weight=5)
+		Grid.rowconfigure(top, 3, weight=5)
 		Grid.columnconfigure(top, 1, weight=1)
-		label1.grid(row=0, column=0, sticky=W, pady=5, padx=5, columnspan=4)
-		label2.grid(row=1, column=0, sticky=E+W, padx=5)
+		label1.grid(row=0, column=0, sticky=W+S, columnspan=4)
+		label2.grid(row=1, column=0, sticky=E+W+N)
 
-		label3.grid(row=2, column=0, sticky=W)
+		label3.grid(row=2, column=0, sticky=W+S)
 
 
-		songtext.grid(row=3, column=0, sticky=N+E+S+W, columnspan=3, padx=5)
+		songtext.grid(row=3, column=0, sticky=N+E+S+W, columnspan=3)
 		delete_button.grid(row=4, column=0, sticky=E)
 		edit_button.grid(row=4, column=1, pady=5, sticky=E)
 		close_button.grid(row=4, column=2, padx=5, pady=5)
@@ -330,7 +330,7 @@ class Application(Frame):
 		self.label1.grid(row=0, column=0, padx=5, pady=5, sticky=W)
 
 		self.songlist.grid(row=1, column=0, padx=5, sticky=N+E+S+W, columnspan=3, rowspan=5, ipady=100, ipadx=100)
-		self.song_scrollbar.grid(row=1, column=2, sticky=N+S+W, rowspan=5)
+		self.song_scrollbar.grid(row=1, column=3, sticky=N+S+W, rowspan=5)
 
 		self.newsong_button.grid(row=7, column=0, padx=5, pady=5, sticky=W+S+E)
 		self.view_button.grid(row=7, column=1, padx=5, pady=5, sticky=W+S+E)
