@@ -15,13 +15,22 @@ from database import *
 
 from tkinter import Text as Text
 
+import datetime
+now = datetime.datetime.now()
+
+print(str(now.day)+"\n"+str(now.month))
+
 
 # Open the database
-engine = create_engine('sqlite:///songs.db', echo=True)
+engine = create_engine('sqlite:///songs.db', echo=False)
  
 # create a Session
 Session = sessionmaker(bind=engine)
 session = Session()
+
+def listrm(sel, listbox):
+	for index in sel[::-1]:
+		listbox.delete(index)
 
 def getSonglist(songlist):
 	""" Populates argument songlist with songs from directory """
@@ -44,15 +53,6 @@ def getSonglist(songlist):
 			tag = "odd"
 
 
-
-	# 	root, ext = os.path.splitext(file_name)
-	# 	if ext == ".txt":
-	# 		songs.append(root)
-	# songs = sorted(songs)
-	# for song in songs:
-	# 	songlist.insert(END, " " + song)
-
-
 def savesong(name, filestring, top, oself, artist):
 	# print(name)
 	# print(filestring)
@@ -62,9 +62,10 @@ def savesong(name, filestring, top, oself, artist):
 	top.destroy()
 
 	# add to db
-	song = Song(name.lower(), artist.lower(), name + ".txt")
-	session.add(song)
-	session.commit()
+	if session.query(Song).filter_by(name=name.lower()).first() == None:
+		song = Song(name.lower(), artist.lower(), name + ".txt")
+		session.add(song)
+		session.commit()
 
 	getSonglist(oself.songlist)
 
@@ -119,7 +120,6 @@ class Application(Frame):
 		scrollbar.config(command=songtext.yview)
 
 		# Entry
-		# songname = StringVar(top, value=name+"")
 		artist_entry = Entry(top)
 		if name == "":
 			artist_entry.insert(END, name)
@@ -167,8 +167,8 @@ class Application(Frame):
 		delete_button = Button(top, text="Delete", command=lambda: delete_song(top, name, filename))
 
 		# Labels
-		label1 = Label(top, text=name, font=("Calibri 12 bold"))
-		label2 = Label(top, text="by "+capwords(session.query(Song).filter_by(name=name.lower()).first().artist))
+		label1 = Label(top, text=name, font=("Calibri 16 bold"))
+		label2 = Label(top, font=("Calibri 16 bold"), text="by "+capwords(session.query(Song).filter_by(name=name.lower()).first().artist))
 		label3 = Label(top, text="Lyrics")
 
 		# Text scrollbar
@@ -225,10 +225,6 @@ class Application(Frame):
 		# Dimensions of the window
 		master.geometry("900x500")
 
-		# Styles
-		# self.style = Style()
-		# self.style.theme_use("default")
-
 		# WIDGETS
 
 		# Add label
@@ -242,9 +238,6 @@ class Application(Frame):
 		# Scrollbar for listbox
 		self.song_scrollbar = Scrollbar()
 
-		# Add listbox
-		# self.songlist = Listbox(master, yscrollcommand=self.song_scrollbar.set)
-
 		# SONGLIST IS NOW TREEVIEW!!!
 		self.songlist = Treeview(master, yscrollcommand=self.song_scrollbar.set)
 		self.songlist["columns"] = ("artist")
@@ -256,22 +249,13 @@ class Application(Frame):
 		self.songlist.heading("artist", text="artist")
 
 		getSonglist(self.songlist)
-		
-		
-		
-		# self.songlist.tag_configure("odd", background='orange')
+				
 		self.songlist.tag_configure("even", background="#E8E8E8")
-		# Populate songs into listbox
-		# getSonglist(self.songlist)
+
 
 		# activate scrollbar
 		self.song_scrollbar.config(command=self.songlist.yview)
 
-
-		# songs = self.setlist.get(0, self.setlist.size()-1)
-		# month = self.month.get()
-		# day = self.day.get()
-		# leader = self.leader.get()
 		
 		# Add buttons
 		self.newsong_button = Button(master, text="New song", command=lambda:self.newSongWindow())
@@ -281,7 +265,7 @@ class Application(Frame):
 							self.day.get(), self.leader.get(), self.setname.get()))
 
 		self.remove_button = Button(master, text="Remove", command=
-							 lambda:self.setlist.delete(self.setlist.curselection()))
+							 lambda: listrm(self.setlist.curselection(), self.setlist))
 
 		self.view_button = Button(master, text="View", command=
 								  lambda:self.viewSongWindow(self.songlist.
@@ -289,7 +273,7 @@ class Application(Frame):
 
 		# Add space for set
 		self.setscroll = Scrollbar()
-		self.setlist = Listbox(master, yscrollcommand=self.setscroll.set)
+		self.setlist = Listbox(master, selectmode="extended", yscrollcommand=self.setscroll.set)
 		self.setscroll.config(command=self.setlist.yview)
 
 		# Entries
@@ -312,11 +296,13 @@ class Application(Frame):
 		months = ["January", "February", "March", "April", "May", "June",
 				  "July", "August", "September", "October", "November",
 				  "December"]
-		self.month_menu = OptionMenu(master, self.month, months[0], *months)
+
+		self.month_menu = OptionMenu(master, self.month, months[now.month-1], *months)
 
 		self.day = StringVar()
+
 		days = range(1, 32, 1)
-		self.days_menu = OptionMenu(master, self.day, days[0], *days)
+		self.days_menu = OptionMenu(master, self.day, now.day, *days)
 
 		# Grid it!
 
@@ -355,6 +341,8 @@ class Application(Frame):
 		# Event listeners!
 		# self.songlist.bind("<Button-1>", lambda event: self.setlist.insert(END, self.songlist.get(ACTIVE)))
 
+		self.setlist.bind("<Delete>", lambda event: listrm(self.setlist.curselection(), self.setlist))
+		self.setlist.bind("<BackSpace>", lambda event: listrm(self.setlist.curselection(), self.setlist))
 		self.songlist.bind("<Double-Button-1>", lambda event: self.setlist.insert(END, self.songlist.item(self.songlist.selection(), "text")))
 		# self.setlist.bind("<ButtonRelease-1>", lambda event: print(self.setlist.get(self.setlist.curselection())))
 

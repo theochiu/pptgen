@@ -25,6 +25,28 @@ def getdb(alist, attr):
 
 def switch(button):
 	button.config(text="Off")
+
+def getSonglist(songlist):
+	""" Populates argument songlist with songs from directory """
+	# Purges contents of the old treelist
+
+	songlist.delete(*songlist.get_children())
+
+	tag = "odd"
+	song = []
+	for row in session.query(Song):
+		song.append(row.name)
+
+	for song in sorted(song, key=str.lower):
+		obj = session.query(Song).filter_by(name=song).first()
+		songlist.insert("", END, text=capwords(song), tags=tag, 
+			values=(capwords(obj.artist), obj.filename, obj.description,
+				obj.speed, obj.sheetname))
+
+		if tag == "odd":
+			tag = "even"
+		else:
+			tag = "odd"
 	
 
 class Application(Frame):
@@ -38,7 +60,7 @@ class Application(Frame):
 		master.title("Edit Database")
 
 		# Dimensions of the window
-		master.geometry("700x500")
+		master.geometry("900x450")
 
 		# Scrollbar for listbox
 		self.list_scrollbar = Scrollbar()
@@ -46,22 +68,32 @@ class Application(Frame):
 
 		# CREATES "TREEVIEW" WIDGET WHICH IS BASICALLY A TABLE
 		self.tree = Treeview(master, yscrollcommand=self.list_scrollbar.set)
-		self.tree["columns"] = "artist"
+		self.tree["columns"] = "artist", "filename", "description", "speed", "sheetname"
 
-		self.tree.column("#0", width=50)
-		self.tree.column("artist", width=25)
+		self.tree.column("#0", width=250)
+		self.tree.column("artist", width=200)
+		self.tree.column("filename", width=200)
+		self.tree.column("description", width=25)		
+		self.tree.column("speed", width=25)
+		self.tree.column("sheetname", width=25)		
+
 
 		self.tree.heading("#0", text="name")
 		self.tree.heading("artist", text="artist")
+		self.tree.heading("filename", text="filename")
+		self.tree.heading("description", text="description")
+		self.tree.heading("speed", text="speed")
+		self.tree.heading("sheetname", text="sheetname")
 
-		for row in session.query(Song):
-			self.tree.insert("", END, text=capwords(row.name), values=(capwords(row.artist), " "))
-			print(row.artist)
+		getSonglist(self.tree)
 
 
 		# ADD ONTO FELTBOARD
 		self.list_scrollbar.pack(side=RIGHT, fill=BOTH)
 		self.tree.pack(fill=BOTH, expand=True)
+
+		# LISTENERS 
+		# self.tree.bind("<Double-Button-1>", lambda event: self.setlist.insert(END, self.songlist.item(self.songlist.selection(), "text")))
 
 	
 
